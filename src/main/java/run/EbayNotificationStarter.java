@@ -1,16 +1,19 @@
 package run;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import model.Item;
+import model.Query;
+import model.SearchQuery;
+import org.apache.commons.io.IOUtils;
+import util.PageParser;
+import util.UrlBuilder;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-import com.google.common.base.Strings;
+
 
 
 /**
@@ -22,26 +25,23 @@ import com.google.common.base.Strings;
  */
 public class EbayNotificationStarter {
 
-    List<Item> allItems = new ArrayList<Item>();
-
     public static void main(String[] args) {
-        try {
-            Document doc = Jsoup.connect("http://www.ebay.com/sch/i.html?LH_BIN=1&_from=R40|R40|R40&_sacat=0&_sop=16&_nkw=iphone&_ipg=50&rt=nc").get();
 
-            //A list of Items that each item has every information it needed.
-            Elements elements = doc.getElementsByAttribute("listingid");
-            for (Element element : elements) {
-                String id = element.attr("listingId");
-                String title = element.getElementsByTag("a").text();
-                String link = element.getElementsByTag("a").attr("href");
-                double price = Double.parseDouble(element.getElementsByAttributeValue("class", "g-b").text().substring(1).replaceAll(",", ""));
-                double shipping = 0.0;
-                String noFreeShipping = element.getElementsByAttributeValue("class", "fee").text();
-                if (!Strings.isNullOrEmpty(noFreeShipping)) {
-                    shipping = Double.parseDouble(noFreeShipping.substring(2).split(" ")[0].replaceAll(",", ""));
-                }
-                Item item = new Item(id, title, link, price, shipping);
-                System.out.println(item);
+        try {
+            ClassLoader classloader = Thread.currentThread().getContextClassLoader();
+            byte[] jsonData = IOUtils.toByteArray(classloader.getResourceAsStream("configuration.json"));
+
+            ObjectMapper objectMapper = new ObjectMapper();
+
+            SearchQuery searchQuery = objectMapper.readValue(jsonData, SearchQuery.class);
+
+            List<Query> allQueries = searchQuery.getQueries();
+
+            for (Query query : allQueries) {
+                String url = UrlBuilder.build(query.getSearchTerm(), query.getLowestPrice(), query.getHighestPrice());
+                List<Item> items = PageParser.parse(url);
+
+                System.out.println(items);
             }
         } catch (Exception e) {
             System.out.println(e);
