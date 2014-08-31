@@ -22,6 +22,46 @@ public class Item {
         this.shipping = shipping;
     }
 
+    public String getId() {
+        return id;
+    }
+
+    public void setId(final String id) {
+        this.id = id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(final String title) {
+        this.title = title;
+    }
+
+    public String getLink() {
+        return link;
+    }
+
+    public void setLink(final String link) {
+        this.link = link;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public void setPrice(final double price) {
+        this.price = price;
+    }
+
+    public double getShipping() {
+        return shipping;
+    }
+
+    public void setShipping(final double shipping) {
+        this.shipping = shipping;
+    }
+
     @Override
     public String toString() {
         return "id: " + this.id + "\n"

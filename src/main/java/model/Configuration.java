@@ -11,11 +11,41 @@ import java.util.List;
  * Time: 12:47 AM
  * To change this template use File | Settings | File Templates.
  */
-public class SearchQuery {
+public class Configuration {
+    @JsonProperty
+    private String from;
+
+    @JsonProperty
+    private String to;
+
+    @JsonProperty
+    private String password;
+
     @JsonProperty
     private List<Query> allQueries;
 
-    public SearchQuery() {
+    public String getFrom() {
+        return from;
+    }
+
+    public void setFrom(final String from) {
+        this.from = from;
+    }
+
+    public String getTo() {
+        return to;
+    }
+
+    public void setTo(final String to) {
+        this.to = to;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(final String password) {
+        this.password = password;
     }
 
     public List<Query> getQueries() {

@@ -1,19 +1,20 @@
 package run;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.io.Files;
+import email.EmailSender;
+import model.Configuration;
 import model.Item;
 import model.Query;
-import model.SearchQuery;
-import org.apache.commons.io.IOUtils;
+import util.MessageBuilder;
 import util.PageParser;
 import util.UrlBuilder;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-
-
+import java.util.Set;
 
 
 /**
@@ -24,24 +25,42 @@ import java.util.List;
  * To change this template use File | Settings | File Templates.
  */
 public class EbayNotificationStarter {
+    private static Set<String> lastSentItems = new HashSet<String>();
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        if (args.length < 1 ) {
+            throw new Exception("Need to pass the configuration file to run");
+        }
+
+        String configFile = args[0];
 
         try {
-            ClassLoader classloader = Thread.currentThread().getContextClassLoader();
-            byte[] jsonData = IOUtils.toByteArray(classloader.getResourceAsStream("configuration.json"));
+            byte[] jsonData = Files.toByteArray(new File(configFile));
 
             ObjectMapper objectMapper = new ObjectMapper();
 
-            SearchQuery searchQuery = objectMapper.readValue(jsonData, SearchQuery.class);
+            Configuration configuration = objectMapper.readValue(jsonData, Configuration.class);
 
-            List<Query> allQueries = searchQuery.getQueries();
+            List<Query> allQueries = configuration.getQueries();
 
-            for (Query query : allQueries) {
-                String url = UrlBuilder.build(query.getSearchTerm(), query.getLowestPrice(), query.getHighestPrice());
-                List<Item> items = PageParser.parse(url);
+            while (true) {
+                for (Query query : allQueries) {
+                    String url = UrlBuilder.build(query.getSearchTerm(), query.getLowestPrice(), query.getHighestPrice());
+                    List<Item> items = PageParser.parse(url);
 
-                System.out.println(items);
+                    List<Item> newItems = new ArrayList<Item>();
+
+                    for (Item item : items) {
+                        if (!lastSentItems.contains(item.getId())) {
+                            newItems.add(item);
+                            lastSentItems.add(item.getId());
+                        }
+                    }
+                    if (newItems.size() > 0) {
+                        EmailSender.send(configuration.getFrom(), configuration.getPassword(), configuration.getTo(), "ebay: " + query.getSearchTerm(), MessageBuilder.build(newItems));
+                    }
+                }
+                Thread.sleep(5000);
             }
         } catch (Exception e) {
             System.out.println(e);
